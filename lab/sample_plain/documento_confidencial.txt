@@ -1,0 +1,27 @@
+DOCUMENTO IMPORTANTE - INFORMACIÓN CONFIDENCIAL
+
+Este documento contiene información crítica y confidencial que debe ser protegida.
+
+CONTENIDO SENSIBLE:
+- Datos financieros de la empresa
+- Información de clientes
+- Estrategias comerciales
+- Contraseñas y credenciales de acceso
+- Documentos legales importantes
+
+FECHA DE CREACIÓN: 2024-01-15
+ÚLTIMA MODIFICACIÓN: 2024-01-15
+NIVEL DE CONFIDENCIALIDAD: ALTO
+
+ADVERTENCIA: Este documento no debe ser compartido con personal no autorizado.
+
+INFORMACIÓN ADICIONAL:
+- Proyecto Alpha: Desarrollo de nueva tecnología
+- Presupuesto asignado: $1,000,000 USD
+- Equipo responsable: Departamento de I+D
+- Fecha límite: 2024-12-31
+
+Este es un archivo de prueba para la simulación educativa de ransomware.
+En un escenario real, este tipo de información sería altamente valiosa para los atacantes.
+
+FIN DEL DOCUMENTO
